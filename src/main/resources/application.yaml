@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: subscriptioncapacityallocator
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/subscription_allocator
+    username: subscription_allocator
+    password: subscription_allocator
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
