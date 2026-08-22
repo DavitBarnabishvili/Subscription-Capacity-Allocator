@@ -1,7 +1,8 @@
 package com.arcticblu.subscriptioncapacityallocator.algorithm;
 
+import com.arcticblu.subscriptioncapacityallocator.util.DecimalScaler;
+
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.*;
 
 public class Optimizer {
@@ -16,15 +17,15 @@ public class Optimizer {
 
         if (maxCapacity.signum() < 0)  throw new IllegalArgumentException("maxCapacity cannot be negative");
 
-        long capacity = scaleToLong(maxCapacity);
+        long capacity = safeScaleToLong(maxCapacity, "maxCapacity");
 
         Map<Long, State> reachableStates = new HashMap<>();
         reachableStates.put(0L, new State(0L, null, -1));
 
         for (int i = 0; i < candidates.size(); i++) {
             Subscription s = candidates.get(i);
-            long amount = scaleToLong(s.requestedAmount());
-            long revenue = scaleToLong(s.feeRevenue());
+            long amount = safeScaleToLong(s.requestedAmount(), "requestedAmount");
+            long revenue = safeScaleToLong(s.feeRevenue(), "feeRevenue");
 
             Map<Long, State> nextStates = new HashMap<>(reachableStates);
 
@@ -60,22 +61,23 @@ public class Optimizer {
         for (State current = best; current.parent != null; current = current.parent) {
             Subscription chosenSub = candidates.get(current.takenIndex);
             acceptedSubs.add(chosenSub);
-            totalRequestedAmount += scaleToLong(chosenSub.requestedAmount());
+            totalRequestedAmount += safeScaleToLong(chosenSub.requestedAmount(), "requestedAmount");
         }
 
-        return new OptimalResult(acceptedSubs, descaleToDecimal(totalRequestedAmount), descaleToDecimal(best.revenue));
+        return new OptimalResult(
+                acceptedSubs,
+                DecimalScaler.toBigDecimal(totalRequestedAmount, SCALING_FACTOR),
+                DecimalScaler.toBigDecimal(best.revenue, SCALING_FACTOR));
     }
 
-    // scaling to avoid floating point issues. Converting to long is just easier to work with in comparisons and arithmetic.
-    private static long scaleToLong(BigDecimal value) {
+    // just for safety and clarity of error messages
+    private static long safeScaleToLong(BigDecimal value, String fieldName) {
         try {
-            return value.setScale(SCALING_FACTOR, RoundingMode.UNNECESSARY).unscaledValue().longValueExact();
+            return DecimalScaler.toLong(value, SCALING_FACTOR);
         } catch (ArithmeticException e) {
-            throw new IllegalArgumentException( "Issue converting " + value + " to long", e);
+            throw new IllegalArgumentException(
+                    fieldName + " can not have more than " + SCALING_FACTOR +
+                    " decimal places or exceed the range of a long when scaled", e);
         }
-    }
-
-    private static BigDecimal descaleToDecimal(long value) {
-        return BigDecimal.valueOf(value, SCALING_FACTOR);
     }
 }
