@@ -30,6 +30,7 @@ public class SubscriptionOptimizationRun {
     private Instant createdAt;
 
     @OneToMany(mappedBy = "run", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("accepted DESC, id ASC")
     private List<SubscriptionRequest> subscriptionRequests = new ArrayList<>();
 
     protected SubscriptionOptimizationRun() { }

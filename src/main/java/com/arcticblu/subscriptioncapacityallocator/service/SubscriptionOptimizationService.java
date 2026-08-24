@@ -5,11 +5,14 @@ import com.arcticblu.subscriptioncapacityallocator.algorithm.Optimizer;
 import com.arcticblu.subscriptioncapacityallocator.algorithm.Subscription;
 import com.arcticblu.subscriptioncapacityallocator.domain.SubscriptionOptimizationRun;
 import com.arcticblu.subscriptioncapacityallocator.domain.SubscriptionRequest;
+import com.arcticblu.subscriptioncapacityallocator.dto.response.AuditTrailResponse;
 import com.arcticblu.subscriptioncapacityallocator.dto.response.OptimizeResponse;
 import com.arcticblu.subscriptioncapacityallocator.dto.request.OptimizeRequest;
+import com.arcticblu.subscriptioncapacityallocator.dto.response.SubscriptionAuditResponseDto;
 import com.arcticblu.subscriptioncapacityallocator.dto.response.SubscriptionResponseDto;
 import com.arcticblu.subscriptioncapacityallocator.repository.SubscriptionOptimizationRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -79,8 +82,9 @@ public class SubscriptionOptimizationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<OptimizeResponse> findAll(Pageable pageable) {
-        return repository.findAllByOrderByCreatedAtDesc(pageable).map(this::toResponse);
+    public Page<AuditTrailResponse> findAll(Pageable pageable) {
+        Pageable pageOnly = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+        return repository.findAllByOrderByCreatedAtDesc(pageOnly).map(this::toResponseAudit);
     }
 
     private OptimizeResponse toResponse(SubscriptionOptimizationRun run) {
@@ -91,5 +95,14 @@ public class SubscriptionOptimizationService {
 
         return new OptimizeResponse(
                 run.getId(), accepted, run.getTotalRequestedAmount(), run.getTotalFeeRevenue(), run.getCreatedAt());
+    }
+
+    private AuditTrailResponse toResponseAudit(SubscriptionOptimizationRun run) {
+        List<SubscriptionAuditResponseDto> subscriptions = run.getSubscriptionRequests().stream()
+                .map(r -> new SubscriptionAuditResponseDto(r.getInvestorName(), r.getRequestedAmount(), r.getFeeRevenue(), r.isAccepted()))
+                .toList();
+
+        return new AuditTrailResponse(
+                run.getId(), run.getMaxCapacity(), subscriptions, run.getTotalRequestedAmount(), run.getTotalFeeRevenue(), run.getCreatedAt());
     }
 }
