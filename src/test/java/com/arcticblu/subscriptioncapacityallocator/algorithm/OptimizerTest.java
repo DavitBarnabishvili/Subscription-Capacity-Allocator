@@ -105,20 +105,6 @@ public class OptimizerTest {
         assertThat(result.totalRequestedAmount()).isLessThanOrEqualTo(new BigDecimal("10"));
     }
 
-//    // Not part of the assignment, I think it's a reasonable tie-breaker. Will decide whether to keep
-//    // or remove when I implement the algorithm.
-//    @Test
-//    void tiedOptimalCombinations_preferLowerCapacity() {
-//        Subscription a = new Subscription("A", new BigDecimal("8"), new BigDecimal("100"));
-//        Subscription b = new Subscription("B", new BigDecimal("5"), new BigDecimal("50"));
-//        Subscription c = new Subscription("C", new BigDecimal("5"), new BigDecimal("50"));
-//
-//        OptimalResult result = optimizer.optimize(new BigDecimal("10"), List.of(a, b, c));
-//
-//        assertThat(result.totalFeeRevenue()).isEqualByComparingTo("100");
-//        assertThat(result.totalRequestedAmount()).isEqualByComparingTo(new BigDecimal("8"));
-//    }
-
     @Test
     void assignmentExample() {
         Subscription a = new Subscription("Investor A", new BigDecimal("5"), new BigDecimal("120"));
@@ -155,6 +141,15 @@ public class OptimizerTest {
         assertThat(result.finalSubscriptions()).containsExactly(b);
         assertThat(result.totalRequestedAmount()).isEqualByComparingTo("5.0002");
         assertThat(result.totalFeeRevenue()).isEqualByComparingTo("95");
+    }
+
+    @Test
+    void fifthDecimalPlace_throwsIllegalArgumentException() {
+        Subscription a = new Subscription("A", new BigDecimal("5.00001"), new BigDecimal("90"));
+
+        assertThatThrownBy(() -> optimizer.optimize(new BigDecimal("10"), List.of(a)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("requestedAmount");
     }
 
     @Test

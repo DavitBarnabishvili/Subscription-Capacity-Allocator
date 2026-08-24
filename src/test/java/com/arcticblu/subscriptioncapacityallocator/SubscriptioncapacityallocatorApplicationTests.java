@@ -11,5 +11,4 @@ class SubscriptioncapacityallocatorApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }
