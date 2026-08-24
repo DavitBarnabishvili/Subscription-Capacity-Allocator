@@ -25,6 +25,8 @@ cd Subscription-Capacity-Allocator
 
 # 1. Start Postgres
 docker-compose up -d
+# If port 5432 is already in use port can be passed in as a variable, e.g. to use 5433 instead:
+# DB_PORT=5433 docker-compose up -d
 
 # 2. Build
 ./mvnw clean package
